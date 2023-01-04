@@ -2,6 +2,9 @@ import React, { FunctionComponent } from "react";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import CustomFormField from "./CustomFormField";
+import CustomOptionField from "./CustomOptionField";
+import { httpsCallable } from "firebase/functions";
+import { useFunctions } from "reactfire";
 
 interface OwnProps {}
 
@@ -17,6 +20,8 @@ const SignupSchema = Yup.object().shape({
   facts: Yup.string().required("Required"),
 });
 const InformationForm: FunctionComponent<Props> = () => {
+  const functions = useFunctions();
+
   const textStyle = "text-5xl font-primary drop-shadow-pop4 pr-2 ";
   return (
     <div>
@@ -29,16 +34,18 @@ const InformationForm: FunctionComponent<Props> = () => {
         initialValues={{
           name: "",
           age: "",
-          gender: "",
+          gender: 3,
           location: "",
           countryOfOrigin: "",
           hobbies: "",
           fact: "",
         }}
         validationSchema={SignupSchema}
-        onSubmit={(values) => {
-          // same shape as initial values
+        onSubmit={async (values) => {
           console.log(values);
+          const response = await httpsCallable(functions, "getPrompt")(values);
+          const bio = response.data;
+          console.log(bio);
         }}
       >
         {({ errors, touched }) => (
@@ -47,10 +54,11 @@ const InformationForm: FunctionComponent<Props> = () => {
 
             <CustomFormField errors={errors} touched={touched} name={"age"} />
 
-            <CustomFormField
-              errors={errors}
-              touched={touched}
+            <CustomOptionField
               name={"gender"}
+              errors={errors}
+              options={["men", "woman", "non-binary", "rather not say"]}
+              touched={touched}
             />
 
             <CustomFormField
@@ -73,7 +81,14 @@ const InformationForm: FunctionComponent<Props> = () => {
 
             <CustomFormField errors={errors} touched={touched} name={"fact"} />
 
-            <button type="submit">Submit</button>
+            <button
+              type="submit"
+              className={
+                "bg-accent w-16 self-center m-5 rounded-md drop-shadow-pop4 text-white font-secondary"
+              }
+            >
+              Submit
+            </button>
           </Form>
         )}
       </Formik>
